@@ -2,17 +2,20 @@ from constant import inventory
 from helper import json_response
 from middleware import Middleware
 from handler import handlers
-
+from router import RouteManager
+from webob import Request,Response
 
 class Application:
     def __init__(self):
-        pass
-    def __call__(self, environ,start_response,*args, **kwds):
-        path = environ.get("PATH_INFO","/")
-        segments = [s for s in path.split("/") if s]
-        category = segments[-1] if segments else ""
-        product = inventory.get(category,[])
-        return json_response(product,start_response)
+        self.router = RouteManager()
+    def __call__(self, environ,start_response):
+        return self.router.dispatch(environ,start_response)
+    
+    def route(self,path):
+        def dec(handler):
+            self.router.register(path,handler)
+            return handler
+        return dec
     
 app = Application()
 
